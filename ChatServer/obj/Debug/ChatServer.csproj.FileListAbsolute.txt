@@ -1,0 +1,15 @@
+I:\Google Drive\ForNotebook\VisualStudio_workspace\WindowsFormsApplication2\ChatServer\bin\Debug\ChatServer.exe.config
+I:\Google Drive\ForNotebook\VisualStudio_workspace\WindowsFormsApplication2\ChatServer\bin\Debug\ChatServer.exe
+I:\Google Drive\ForNotebook\VisualStudio_workspace\WindowsFormsApplication2\ChatServer\bin\Debug\ChatServer.pdb
+I:\Google Drive\ForNotebook\VisualStudio_workspace\WindowsFormsApplication2\ChatServer\obj\Debug\ChatServer.exe
+I:\Google Drive\ForNotebook\VisualStudio_workspace\WindowsFormsApplication2\ChatServer\obj\Debug\ChatServer.pdb
+C:\Users\Administrator\Google 드라이브\ForNotebook\VisualStudio_workspace\WindowsFormsApplication2\ChatServer\bin\Debug\ChatServer.exe.config
+C:\Users\Administrator\Google 드라이브\ForNotebook\VisualStudio_workspace\WindowsFormsApplication2\ChatServer\bin\Debug\ChatServer.exe
+C:\Users\Administrator\Google 드라이브\ForNotebook\VisualStudio_workspace\WindowsFormsApplication2\ChatServer\bin\Debug\ChatServer.pdb
+C:\Users\Administrator\Google 드라이브\ForNotebook\VisualStudio_workspace\WindowsFormsApplication2\ChatServer\obj\Debug\ChatServer.exe
+C:\Users\Administrator\Google 드라이브\ForNotebook\VisualStudio_workspace\WindowsFormsApplication2\ChatServer\obj\Debug\ChatServer.pdb
+D:\GoogleDrive\ForNotebook\VisualStudio_workspace\WindowsFormsApplication2\ChatServer\bin\Debug\ChatServer.exe.config
+D:\GoogleDrive\ForNotebook\VisualStudio_workspace\WindowsFormsApplication2\ChatServer\bin\Debug\ChatServer.exe
+D:\GoogleDrive\ForNotebook\VisualStudio_workspace\WindowsFormsApplication2\ChatServer\bin\Debug\ChatServer.pdb
+D:\GoogleDrive\ForNotebook\VisualStudio_workspace\WindowsFormsApplication2\ChatServer\obj\Debug\ChatServer.exe
+D:\GoogleDrive\ForNotebook\VisualStudio_workspace\WindowsFormsApplication2\ChatServer\obj\Debug\ChatServer.pdb
