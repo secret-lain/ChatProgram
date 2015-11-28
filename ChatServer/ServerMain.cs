@@ -10,7 +10,8 @@ using System.Threading;
 
 namespace ChatServer
 {
-    class ServerMain
+    //main Methods
+    partial class ServerMain
     {
         private static TcpListener serverSocket;
         private static IPAddress ip;
@@ -24,8 +25,7 @@ namespace ChatServer
             serverSocket = new TcpListener(ip, 25252);
             serverSocket.Start();
 
-            //람다식으로 구현되어있기 때문에 중간에 멈추지 않는다.
-            //메세지 큐의 경우 멈출 이유가 없기 때문에 일회성 함수인 람다로 구현하였다.
+            //서버에 상주하며 메세지큐를 검사하고 메세지를 브로드캐스팅해주는 쓰레드. 람다로 구현.
             Thread MsgQueueThread = new Thread(new ThreadStart(()=>
             {
                 try
@@ -54,8 +54,6 @@ namespace ChatServer
             while (true)
             {
                 TcpClient acceptedClient = serverSocket.AcceptTcpClient();
-                acceptedClient.SendBufferSize = 256;
-                acceptedClient.ReceiveBufferSize = 256;
                 Console.WriteLine("Client Accepted at " + DateTime.Now);
                 if (acceptedClient.Connected)
                 {
@@ -64,7 +62,11 @@ namespace ChatServer
                 }
             }
         }
-
+    }
+    
+    //client Methods + other Methods
+    partial class ServerMain
+    {
         //클라이언트의 Msg Recv Thread. 에러발생시 
         static void ClientCommFunction(object _socket)
         {
@@ -102,8 +104,8 @@ namespace ChatServer
             }
             finally
             {
-                //ClientNode Destruction
                 clientPool.Remove(socket);
+                socket.Close();
             }
         }
     }
