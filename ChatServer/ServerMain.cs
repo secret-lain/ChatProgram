@@ -37,16 +37,15 @@ namespace ChatServer
                             byte[] dequeString = clientSentMsgQueue.Dequeue();
                             foreach (TcpClient node in clientPool)
                             {
-                                if(node.Connected)
+                                if (node.Connected && dequeString != null)
                                     node.GetStream().Write(dequeString, 0, dequeString.Length);
                             }
                         }
                     }
                 }
-                catch (InvalidOperationException)
-                {
-                    //Pool에서의 Remove는 Recv Thread에서 처리를 담당한다.
-                }
+                catch (InvalidOperationException) { }
+                catch (IOException) { }
+                //Exception의 경우 Node Pool에서 알아서 삭제되기 때문에 처리하지 않는다.
             }));
             MsgQueueThread.Start();
 
@@ -77,7 +76,7 @@ namespace ChatServer
                 while (true)
                 {
                     byte[] recvMsgByte = new byte[256];
-                    socket.GetStream().Read(recvMsgByte, 0, socket.ReceiveBufferSize);
+                    socket.GetStream().Read(recvMsgByte, 0, 256);
                     if (recvMsgByte != null)
                     {
                         //String parsedRecvMsg = new String(Encoding.UTF8.GetChars(recvMsgByte)).TrimEnd(new char[] { (char)0 });

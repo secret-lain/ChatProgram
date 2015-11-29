@@ -13,3 +13,8 @@ D:\GoogleDrive\ForNotebook\VisualStudio_workspace\WindowsFormsApplication2\ChatS
 D:\GoogleDrive\ForNotebook\VisualStudio_workspace\WindowsFormsApplication2\ChatServer\bin\Debug\ChatServer.pdb
 D:\GoogleDrive\ForNotebook\VisualStudio_workspace\WindowsFormsApplication2\ChatServer\obj\Debug\ChatServer.exe
 D:\GoogleDrive\ForNotebook\VisualStudio_workspace\WindowsFormsApplication2\ChatServer\obj\Debug\ChatServer.pdb
+C:\Users\Administrator\Desktop\ChatProgram\ChatServer\bin\Debug\ChatServer.exe.config
+C:\Users\Administrator\Desktop\ChatProgram\ChatServer\bin\Debug\ChatServer.exe
+C:\Users\Administrator\Desktop\ChatProgram\ChatServer\bin\Debug\ChatServer.pdb
+C:\Users\Administrator\Desktop\ChatProgram\ChatServer\obj\Debug\ChatServer.exe
+C:\Users\Administrator\Desktop\ChatProgram\ChatServer\obj\Debug\ChatServer.pdb

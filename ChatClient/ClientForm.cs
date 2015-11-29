@@ -24,67 +24,54 @@ namespace ChatServer
         int serverPort;
         IPAddress serverIP;
 
-        public ClientForm()
-        {
-            InitializeComponent();
-            clientSocket = new TcpClient();
-        }
-
-
-        //TODO 소켓Write
-        //ContentTextbox 에 입력텍스트를 출력하고 소켓을 통해 서버에 같은 메시지 전송
-        private void TextWrite(String text, Boolean printId = false, Boolean serverSend = false)
+        private Boolean ClientConnect()
         {
             try
             {
-                if (printId)
-                    text = "[" + clientNickname + "] " + text;
+                clientSocket.Connect(serverIP, serverPort);
+                clientStream = clientSocket.GetStream();
 
-                if (clientStream != null && serverSend)
-                {
-                    byte[] sendMsg = new byte[256];
-                    Encoding.UTF8.GetBytes(text).CopyTo(sendMsg, 0);
+                byte[] nickNameCheck = new byte[1];
+                Boolean nickNameCheckBoolean;
+                serverSend(clientNickname, serverSend: true);
+                clientStream.Read(nickNameCheck, 0, 1);
 
-                    clientStream.Write(sendMsg, 0, sendMsg.Length);
-                    clientStream.Flush();
+                //변환이 실패했거나, 성공했음에도 nickNameCheck 실패(동일한 닉네임이 존재)했을 경우
+                if(Boolean.TryParse(nickNameCheck.ToString(),out nickNameCheckBoolean) && nickNameCheckBoolean == false){
+                    MessageBox.Show("Same Nickname is exist on server", "Error");
+                    return false;
                 }
-                else if(!serverSend)
-                    ContentTextbox.AppendText(text + "\n");
 
+                //Connect 후 ServerMsgRecvThread의 초기화
+                if (ServerMsgRecvThread != null)
+                {
+                    ServerMsgRecvThread.Abort();
+                    ServerMsgRecvThread = null;
+                }
+                //ServerMsgRecvThread의 동작. 256 BufferSize의 Msg를 지속적으로 수신한다.
+                //Read에서 대기하다가 Server에서 Msg를 송신하면 이후코드실행
+                ServerMsgRecvThread = new Thread(new ThreadStart(() =>
+                {
+                    byte[] recvMsg = new byte[256];
+                    while (true)
+                    {
+                        clientStream.Read(recvMsg, 0, recvMsg.Length);
+                        String parsedRecvMsg = new String(Encoding.UTF8.GetChars(recvMsg)).TrimEnd(new char[] { (char)0 });
+                        if (parsedRecvMsg != null)
+                            ContentTextbox.AppendText(parsedRecvMsg + "\n");
+                        recvMsg.Initialize();
+                    }
+                }));
+                ServerMsgRecvThread.Start();
+
+                return true;
             }
             catch (SocketException)
             {
-                ContentTextbox.AppendText("\n>> Socket Connection Failed Unexpectably! Please click Reconnect\n");
-                SendMsgTextbox.Clear();
-                CloseSocket();
-                button1.Visible = true;
+                if (ServerMsgRecvThread != null && ServerMsgRecvThread.IsAlive)
+                    ServerMsgRecvThread.Abort();
+                return false;
             }
-            catch (IOException)
-            {
-                ContentTextbox.AppendText("\n>> Socket Connection Failed Unexpectably! Please click Reconnect\n");
-                SendMsgTextbox.Clear();
-                CloseSocket();
-                button1.Visible = true;
-            }
-        }
-        
-
-
-        // Send 버튼 클릭시 TextWrite를 통해 서버로 메세지 전송.
-        private void SendButton_Click(object sender, EventArgs e)
-        {
-                //자기닉네임을 결정하지 않았을 경우 MsgBox 출력
-                if (clientNickname == null)
-                    MessageBox.Show("You should input your id first", "Error");
-                else
-                {
-                    //내용이 없을 경우 아무 반응 안함, 내용이 있을 경우 출력
-                    if (SendMsgTextbox.Text != null && !SendMsgTextbox.Text.Equals(""))
-                    {
-                        TextWrite(SendMsgTextbox.Text,true,true);
-                        SendMsgTextbox.Clear();
-                    }
-                }
         }
 
         private void CloseSocket()
@@ -104,7 +91,91 @@ namespace ChatServer
                 ServerMsgRecvThread.Abort();
                 ServerMsgRecvThread = null;
             }
-            
+        }
+
+
+        //TODO 소켓Write
+        //ContentTextbox 에 입력텍스트를 출력하고 소켓을 통해 서버에 같은 메시지 전송
+        private void serverSend(String text, Boolean printId = false, Boolean serverSend = false)
+        {
+            try
+            {
+                if (printId)
+                    text = "[" + clientNickname + "] " + text;
+
+                if (clientStream != null && clientStream.CanWrite && serverSend)
+                {
+                    byte[] sendMsg = new byte[256];
+                    Encoding.UTF8.GetBytes(text).CopyTo(sendMsg, 0);
+
+                    clientStream.Write(sendMsg, 0, sendMsg.Length);
+                    clientStream.Flush();
+                }
+                else if (!serverSend)
+                    //통신불안정으로 서버 브로드캐스팅을 받아오지 못하는 부분이 아닌 명시적으로 내부메세지로 사용하기 위함
+                    ContentTextbox.AppendText(text + "\n");
+
+            }
+            catch (SocketException)
+            {
+                ContentTextbox.AppendText("\n>> Socket Connection Failed Unexpectably! Please click Reconnect\n");
+                SendMsgTextbox.Clear();
+                CloseSocket();
+                button1.Visible = true;
+            }
+            catch (IOException)
+            {
+                ContentTextbox.AppendText("\n>> Socket Connection Failed Unexpectably! Please click Reconnect\n");
+                SendMsgTextbox.Clear();
+                CloseSocket();
+                button1.Visible = true;
+            }
+        }
+
+        /// <summary>
+        /// 초기화 페이지의 토글. 닫기의 경우 CloseSocket()을 동반한다.
+        /// </summary>
+        /// <param name="open">true = 열기, false = 닫기</param>
+        private void toggleInitializingPage(Boolean open)
+        {
+            if (open)
+            {
+                InitializingPanel.Visible = true;
+                MessagePanel.Visible = false;
+                CloseSocket();
+            }
+            else
+            {
+                InitializingPanel.Visible = false;
+                MessagePanel.Visible = true;
+                idTextbox.Text = clientNickname;
+            }
+        }
+
+        /////////////////////////////////////////////////////////////////////////////////////
+        //                         Form Auto Create Event Method                           //
+        /////////////////////////////////////////////////////////////////////////////////////
+        public ClientForm()
+        {
+            InitializeComponent();
+            clientSocket = new TcpClient();
+        }
+
+        // Send 버튼 클릭시 TextWrite를 통해 서버로 메세지 전송.
+        private void SendButton_Click(object sender, EventArgs e)
+        {
+                //자기닉네임을 결정하지 않았을 경우 MsgBox 출력
+                if (clientNickname == null)
+                    MessageBox.Show("You should input your id first", "Error");
+                else
+                {
+                    //내용이 없을 경우 아무 반응 안함, 내용이 있을 경우 출력
+                    if (SendMsgTextbox.Text != null && !SendMsgTextbox.Text.Equals(""))
+                    {
+                        serverSend(SendMsgTextbox.Text,true,true);
+                        SendMsgTextbox.Clear();
+                    }
+                }
         }
 
         //Form 닫힐 시 연결종료
@@ -131,8 +202,8 @@ namespace ChatServer
             if ((clientNickname != idTextbox.Text) && !idTextbox.Text.Equals(""))
             {
                 if (clientNickname == null)
-                    TextWrite(">> Your Nickname is " + idTextbox.Text);
-                else TextWrite(clientNickname + "->" + idTextbox.Text,serverSend:true);
+                    serverSend(">> Your Nickname is " + idTextbox.Text);
+                else serverSend(clientNickname + "->" + idTextbox.Text,serverSend:true);
                 
                 clientNickname = idTextbox.Text;
             }
@@ -187,43 +258,12 @@ namespace ChatServer
                     //Panel Visible 상태변경, 이 후부터 정상적인 통신
                     InitializingPanel.Visible = false;
                     MessagePanel.Visible = true;
+                    idTextbox.Text = clientNickname;
                 }
                 else
                 {
                     MessageBox.Show("Server connection Failed!");
                 }
-            }
-        }
-
-        private Boolean ClientConnect()
-        {
-            try
-            {
-                clientSocket.Connect(serverIP, serverPort);
-                clientStream = clientSocket.GetStream();
-
-                if (ServerMsgRecvThread == null)
-                {
-                    ServerMsgRecvThread = new Thread(new ThreadStart(() =>
-                    {
-                        byte[] recvMsg = new byte[256];
-                        while (true)
-                        {
-                            clientStream.Read(recvMsg, 0, recvMsg.Length);
-                            String parsedRecvMsg = new String(Encoding.UTF8.GetChars(recvMsg)).TrimEnd(new char[] { (char)0 });
-                            ContentTextbox.AppendText(parsedRecvMsg + "\n");
-                            recvMsg.Initialize();
-                        }
-                    }));
-                    ServerMsgRecvThread.Start();
-                }
-                return true;
-            }
-            catch (SocketException)
-            {
-                if (ServerMsgRecvThread != null && ServerMsgRecvThread.IsAlive)
-                    ServerMsgRecvThread.Abort();
-                return false;
             }
         }
     }
