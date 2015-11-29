@@ -12,7 +12,7 @@ using System.IO;
 using System.Threading;
 using System.Net;
 
-namespace ChatServer
+namespace ChatClient
 {
     public partial class ClientForm : Form
     {
@@ -24,7 +24,16 @@ namespace ChatServer
         int serverPort;
         IPAddress serverIP;
 
-        private Boolean ClientConnect()
+        delegate void setTextCallback(string text, Boolean printId, Boolean serverSend);
+
+        /// <summary>
+        /// </summary>
+        /// <returns>
+        /// 1 = 정상
+        /// -1 = 예외에 의한 에러
+        /// -5 = 서버내 동일 닉네임이 존재함에 의한 에러
+        /// </returns>
+        private int ClientConnect()
         {
             try
             {
@@ -32,14 +41,12 @@ namespace ChatServer
                 clientStream = clientSocket.GetStream();
 
                 byte[] nickNameCheck = new byte[1];
-                Boolean nickNameCheckBoolean;
-                serverSend(clientNickname, serverSend: true);
+                textWrite(clientNickname, serverSend: true);
                 clientStream.Read(nickNameCheck, 0, 1);
 
                 //변환이 실패했거나, 성공했음에도 nickNameCheck 실패(동일한 닉네임이 존재)했을 경우
-                if(Boolean.TryParse(nickNameCheck.ToString(),out nickNameCheckBoolean) && nickNameCheckBoolean == false){
-                    MessageBox.Show("Same Nickname is exist on server", "Error");
-                    return false;
+                if(nickNameCheck[0] == 0){
+                    return -5;
                 }
 
                 //Connect 후 ServerMsgRecvThread의 초기화
@@ -58,19 +65,19 @@ namespace ChatServer
                         clientStream.Read(recvMsg, 0, recvMsg.Length);
                         String parsedRecvMsg = new String(Encoding.UTF8.GetChars(recvMsg)).TrimEnd(new char[] { (char)0 });
                         if (parsedRecvMsg != null)
-                            ContentTextbox.AppendText(parsedRecvMsg + "\n");
+                            textWrite(parsedRecvMsg);
                         recvMsg.Initialize();
                     }
                 }));
                 ServerMsgRecvThread.Start();
 
-                return true;
+                return 1;
             }
             catch (SocketException)
             {
                 if (ServerMsgRecvThread != null && ServerMsgRecvThread.IsAlive)
                     ServerMsgRecvThread.Abort();
-                return false;
+                return -1;
             }
         }
 
@@ -94,27 +101,33 @@ namespace ChatServer
         }
 
 
-        //TODO 소켓Write
         //ContentTextbox 에 입력텍스트를 출력하고 소켓을 통해 서버에 같은 메시지 전송
-        private void serverSend(String text, Boolean printId = false, Boolean serverSend = false)
+        private void textWrite(String text, Boolean printId = false, Boolean serverSend = false)
         {
             try
             {
-                if (printId)
-                    text = "[" + clientNickname + "] " + text;
-
-                if (clientStream != null && clientStream.CanWrite && serverSend)
+                if (ContentTextbox.InvokeRequired)
                 {
-                    byte[] sendMsg = new byte[256];
-                    Encoding.UTF8.GetBytes(text).CopyTo(sendMsg, 0);
-
-                    clientStream.Write(sendMsg, 0, sendMsg.Length);
-                    clientStream.Flush();
+                    setTextCallback cb = new setTextCallback(textWrite);
+                    Invoke(cb,new object[]{text, printId, serverSend});
                 }
-                else if (!serverSend)
-                    //통신불안정으로 서버 브로드캐스팅을 받아오지 못하는 부분이 아닌 명시적으로 내부메세지로 사용하기 위함
-                    ContentTextbox.AppendText(text + "\n");
+                else
+                {
+                    if (printId)
+                        text = "[" + clientNickname + "] " + text;
 
+                    if (clientStream != null && clientStream.CanWrite && serverSend)
+                    {
+                        byte[] sendMsg = new byte[256];
+                        Encoding.UTF8.GetBytes(text).CopyTo(sendMsg, 0);
+
+                        clientStream.Write(sendMsg, 0, sendMsg.Length);
+                        clientStream.Flush();
+                    }
+                    else if (!serverSend)
+                        //통신불안정으로 서버 브로드캐스팅을 받아오지 못하는 부분이 아닌 명시적으로 내부메세지로 사용하기 위함
+                        ContentTextbox.AppendText(text + "\n");
+                }  
             }
             catch (SocketException)
             {
@@ -172,7 +185,7 @@ namespace ChatServer
                     //내용이 없을 경우 아무 반응 안함, 내용이 있을 경우 출력
                     if (SendMsgTextbox.Text != null && !SendMsgTextbox.Text.Equals(""))
                     {
-                        serverSend(SendMsgTextbox.Text,true,true);
+                        textWrite(SendMsgTextbox.Text,true,true);
                         SendMsgTextbox.Clear();
                     }
                 }
@@ -197,17 +210,18 @@ namespace ChatServer
         }
 
         //입력란에 커서 위치시 닉네임 변경여부 확인 및 서버에 변경상태 전달
-        private void SendMsgTextbox_Enter(object sender, EventArgs e)
+        //Notice::현재 미사용
+        /*private void SendMsgTextbox_Enter(object sender, EventArgs e)
         {
             if ((clientNickname != idTextbox.Text) && !idTextbox.Text.Equals(""))
             {
                 if (clientNickname == null)
-                    serverSend(">> Your Nickname is " + idTextbox.Text);
-                else serverSend(clientNickname + "->" + idTextbox.Text,serverSend:true);
+                    textWrite(">> Your Nickname is " + idTextbox.Text);
+                else textWrite(clientNickname + "->" + idTextbox.Text,serverSend:true);
                 
                 clientNickname = idTextbox.Text;
             }
-        }
+        }*/
 
         private void ContentTextbox_DoubleClick(object sender, EventArgs e)
         {
@@ -232,7 +246,13 @@ namespace ChatServer
 
         private void idTextbox_MouseDoubleClick(object sender, MouseEventArgs e)
         {
-            //TODO 닉네임변경은 더블클릭으로 새폼이나 다이얼로그 열어서만 가능
+            String buf = InputTextDialog.ShowDialog("Nickname", "Input Your Nickname");
+            if (buf != null)
+            {
+                clientNickname = buf;
+                idTextbox.Text = clientNickname;
+                //TODO 변경한 점은 서버에 보내야한다.
+            }
         }
 
         //최초 패널내의 connect 버튼을 클릭할때 내용체크 및 연결
@@ -253,18 +273,26 @@ namespace ChatServer
             }
             else
             {
-                if (ClientConnect())
+                int connectionResult = ClientConnect();
+                if (connectionResult == 1)
                 {
-                    //Panel Visible 상태변경, 이 후부터 정상적인 통신
-                    InitializingPanel.Visible = false;
-                    MessagePanel.Visible = true;
-                    idTextbox.Text = clientNickname;
+                    toggleInitializingPage(false);
                 }
-                else
+                else if(connectionResult == -1)
                 {
                     MessageBox.Show("Server connection Failed!");
                 }
+                else if (connectionResult == -5)
+                {
+                    MessageBox.Show("Same Nickname exist on server!");
+                }
             }
+        }
+
+        //ContentTextBox 에 아무것도 입력하지 못하게 만들기 위함
+        private void ContentTextbox_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            e.Handled = true;
         }
     }
 }

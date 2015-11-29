@@ -3,7 +3,7 @@ using System.Net;
 using System;
 using System.Text;
 
-namespace ChatServer
+namespace ChatClient
 {
     class ClientNode
     {
