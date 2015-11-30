@@ -16,13 +16,14 @@ namespace ChatClient
 {
     public partial class ClientForm : Form
     {
-        TcpClient clientSocket = null;
-        NetworkStream clientStream = null;
-        Thread ServerMsgRecvThread = null;
+        private TcpClient clientSocket = null;
+        private NetworkStream clientStream = null;
+        private Thread ServerMsgRecvThread = null;
 
-        String clientNickname = null;
-        int serverPort;
-        IPAddress serverIP;
+        private String clientNickname = null;
+        private int serverPort;
+        private IPAddress serverIP;
+        private const int BUFFERSIZE = 256;
 
         delegate void setTextCallback(string text, Boolean printId, Boolean serverSend);
 
@@ -35,6 +36,11 @@ namespace ChatClient
         /// </returns>
         private int ClientConnect()
         {
+            //reconnect를 위한 초기화
+            if (clientSocket != null && clientSocket.Connected)
+                CloseSocket();
+            clientSocket = new TcpClient();
+
             try
             {
                 clientSocket.Connect(serverIP, serverPort);
@@ -55,18 +61,18 @@ namespace ChatClient
                     ServerMsgRecvThread.Abort();
                     ServerMsgRecvThread = null;
                 }
-                //ServerMsgRecvThread의 동작. 256 BufferSize의 Msg를 지속적으로 수신한다.
+                //ServerMsgRecvThread의 동작. BufferSize의 Msg를 지속적으로 수신한다.
                 //Read에서 대기하다가 Server에서 Msg를 송신하면 이후코드실행
                 ServerMsgRecvThread = new Thread(new ThreadStart(() =>
                 {
-                    byte[] recvMsg = new byte[256];
+                    byte[] recvMsg = new byte[BUFFERSIZE];
                     while (true)
                     {
-                        clientStream.Read(recvMsg, 0, recvMsg.Length);
-                        String parsedRecvMsg = new String(Encoding.UTF8.GetChars(recvMsg)).TrimEnd(new char[] { (char)0 });
-                        if (parsedRecvMsg != null)
-                            textWrite(parsedRecvMsg);
-                        recvMsg.Initialize();
+                            clientStream.Read(recvMsg, 0, recvMsg.Length);
+                            String parsedRecvMsg = new String(Encoding.UTF8.GetChars(recvMsg)).TrimEnd(new char[] { (char)0 });
+                            if (parsedRecvMsg != null)
+                                textWrite(parsedRecvMsg);
+                            recvMsg.Initialize();
                     }
                 }));
                 ServerMsgRecvThread.Start();
@@ -118,7 +124,7 @@ namespace ChatClient
 
                     if (clientStream != null && clientStream.CanWrite && serverSend)
                     {
-                        byte[] sendMsg = new byte[256];
+                        byte[] sendMsg = new byte[BUFFERSIZE];
                         Encoding.UTF8.GetBytes(text).CopyTo(sendMsg, 0);
 
                         clientStream.Write(sendMsg, 0, sendMsg.Length);
@@ -171,7 +177,6 @@ namespace ChatClient
         public ClientForm()
         {
             InitializeComponent();
-            clientSocket = new TcpClient();
         }
 
         // Send 버튼 클릭시 TextWrite를 통해 서버로 메세지 전송.

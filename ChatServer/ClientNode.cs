@@ -10,12 +10,11 @@ namespace ChatClient
         private TcpClient client;
         private NetworkStream nStream;
 
-        public String clientId { get { return _clientId; } }
-        private String _clientId;
+        public int clientLevel { get; set; }
+        //ClientId는 Server의 Hashtable이 Key로서 관리
         
-        public ClientNode(TcpClient client, String clientId)
+        public ClientNode(TcpClient client,int clientLevel)
         {
-            this._clientId = clientId;
             this.client = client;
             Connect();
         }
