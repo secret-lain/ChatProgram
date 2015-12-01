@@ -18,9 +18,8 @@ namespace ChatClient
         private static IPAddress ip;
         private static int port;
         private static Queue<byte[]> clientSentMsgQueue = new Queue<byte[]>(5);
-        private static HashSet<TcpClient> clientPool = new HashSet<TcpClient>();
-        private static Hashtable clientPoolTest = new Hashtable(10);
-        private const int BUFFERSIZE = 256;
+        private static Hashtable clientPool = new Hashtable(10);
+        private const int BUFFERSIZE = 512;
         //clientPool은 clientId 없이 모든 클라이언트에게 메세지 브로드캐스팅을 하기위함
         
         static void Main(string[] args)
@@ -29,10 +28,10 @@ namespace ChatClient
             Console.WriteLine("Argument Check(ip, port)...");
 
             //Argument가 ip, port 순으로 존재하면 사용하고, 그렇지 않으면 localhost:25252
-            if (args.Length == 3)
+            if (args.Length == 2)
             {
-                if(IPAddress.TryParse(args[1],out ip) && Int32.TryParse(args[2],out port)){
-                    Console.WriteLine("Argument is correct, server address is" + ip + ":" + port);
+                if(IPAddress.TryParse(args[0],out ip) && Int32.TryParse(args[1],out port)){
+                    Console.WriteLine("Argument is correct, server address is " + ip + ":" + port);
                 }
             }
             else
@@ -56,12 +55,18 @@ namespace ChatClient
                         {
                             byte[] dequeBytes = clientSentMsgQueue.Dequeue();
                             String dequeEchoString = Encoding.UTF8.GetString(dequeBytes).TrimEnd(new char[] { (char)0 });
-                            Console.WriteLine(dequeEchoString);//Echo
-                            foreach (TcpClient node in clientPool)
+                            if(dequeEchoString != "")
                             {
-                                if (node.Connected && dequeBytes != null)
-                                    node.GetStream().Write(dequeBytes, 0, BUFFERSIZE);
+                                Console.WriteLine(dequeEchoString);//Echo
+                                foreach (DictionaryEntry node in clientPool)
+                                {
+                                    if (((TcpClient)node.Value).Connected && dequeBytes != null)
+                                    {
+                                        ((TcpClient)node.Value).GetStream().Write(dequeBytes, 0, BUFFERSIZE);
+                                    }
+                                }
                             }
+                            
                         }
                     }
                 }
@@ -72,6 +77,7 @@ namespace ChatClient
             MsgQueueThread.Start();
 
             //지속적으로 Tcp Socket을 Accept 하는 부분
+            //accepted 시 닉네임 중복 검색 -> 중복없을시 1 -> 접속알림 브로드캐스팅 -> 스레드생성
             while (true)
             {
                 //접속시 최초에 클라이언트에서 설정한 닉네임을 받는다
@@ -83,21 +89,21 @@ namespace ChatClient
                 
                 //해당 닉네임과 같은 닉네임이 clientPool 에 존재할 경우 0의 값을 전송, 없을 경우 1의 값을 전송 후 accept
                 //TODO 존재할 경우 임의의 숫자를 붙인 닉네임을 전송하고 accept
-                if (clientPoolTest.ContainsKey(nickNameCheckBufferString))
+                if (clientPool.ContainsKey(nickNameCheckBufferString))
                 {
                     Console.WriteLine(nickNameCheckBufferString + "'s connection is rejected - exist same nickname on server");
                     acceptedClient.GetStream().Write(new byte[] { 0 }, 0, 1);
                     acceptedClient.Close();
                 }
                 else
-                {
-                    Console.WriteLine("Client, " + nickNameCheckBufferString + " is accepted at " + DateTime.Now);
-                    acceptedClient.GetStream().Write(new byte[] { 1 }, 0, 1);
+                {   
                     if (acceptedClient.Connected)
                     {
-                        clientPool.Add(acceptedClient);
-                        clientPoolTest.Add(nickNameCheckBufferString, acceptedClient);
-                        //ThreadPool.QueueUserWorkItem(new WaitCallback(ClientCommFunction), acceptedClient);
+                        Console.WriteLine("Client, " + nickNameCheckBufferString + " is accepted at " + DateTime.Now);
+                        acceptedClient.GetStream().Write(new byte[] { 1 }, 0, 1);
+                        clientSentMsgQueue.Enqueue(Encoding.UTF8.GetBytes((nickNameCheckBufferString + " is entered.").PadRight(BUFFERSIZE,(char)0)));
+                        clientPool.Add(nickNameCheckBufferString, acceptedClient);
+                        
                         ThreadPool.QueueUserWorkItem(new WaitCallback(ClientCommFunction), nickNameCheckBufferString);
                     }
                 }
@@ -112,7 +118,7 @@ namespace ChatClient
         static void ClientCommFunction(object _clientId)
         {
             String clientId = (String)_clientId;
-            TcpClient socket = (TcpClient)clientPoolTest[clientId];
+            TcpClient socket = (TcpClient)clientPool[clientId];
             NetworkStream socketStream = socket.GetStream();
 
             try
@@ -123,6 +129,8 @@ namespace ChatClient
                     if (socket.Client.Poll(1000, SelectMode.SelectRead) && socket.Client.Available == 0)
                     {
                         Console.WriteLine(clientId + "'s Connection close");
+                        clientSentMsgQueue.Enqueue(Encoding.UTF8.GetBytes((clientId + " left.").PadRight(BUFFERSIZE, (char)0)));
+                        
                         break;
                     }
                     else
@@ -157,8 +165,7 @@ namespace ChatClient
             finally
             {
                 socket.Close();
-                clientPool.Remove(socket);
-                clientPoolTest.Remove(clientId);
+                clientPool.Remove(clientId);
             }
         }
     }

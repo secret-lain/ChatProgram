@@ -23,7 +23,7 @@ namespace ChatClient
         private String clientNickname = null;
         private int serverPort;
         private IPAddress serverIP;
-        private const int BUFFERSIZE = 256;
+        private const int BUFFERSIZE = 512;
 
         delegate void setTextCallback(string text, Boolean printId, Boolean serverSend);
 

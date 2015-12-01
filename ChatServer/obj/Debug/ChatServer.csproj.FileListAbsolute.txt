@@ -18,4 +18,3 @@ C:\Users\Administrator\Desktop\ChatProgram\ChatServer\bin\Debug\ChatServer.exe.c
 C:\Users\Administrator\Desktop\ChatProgram\ChatServer\bin\Debug\ChatServer.pdb
 C:\Users\Administrator\Desktop\ChatProgram\ChatServer\obj\Debug\ChatServer.exe
 C:\Users\Administrator\Desktop\ChatProgram\ChatServer\obj\Debug\ChatServer.pdb
-C:\Users\Administrator\Desktop\ChatProgram\ChatServer\obj\Debug\ChatServer.csprojResolveAssemblyReference.cache
