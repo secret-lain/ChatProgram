@@ -35,3 +35,4 @@ C:\Users\Administrator\Desktop\ChatProgram\ChatClient\obj\Debug\ChatClient.Prope
 C:\Users\Administrator\Desktop\ChatProgram\ChatClient\obj\Debug\ChatClient.csproj.GenerateResource.Cache
 C:\Users\Administrator\Desktop\ChatProgram\ChatClient\obj\Debug\WindowsFormsApplication2.exe
 C:\Users\Administrator\Desktop\ChatProgram\ChatClient\obj\Debug\WindowsFormsApplication2.pdb
+C:\Users\Administrator\Desktop\ChatProgram\ChatClient\obj\Debug\ChatClient.csprojResolveAssemblyReference.cache

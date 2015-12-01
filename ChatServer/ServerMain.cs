@@ -113,13 +113,19 @@ namespace ChatClient
         {
             String clientId = (String)_clientId;
             TcpClient socket = (TcpClient)clientPoolTest[clientId];
+            NetworkStream socketStream = socket.GetStream();
 
             try
             {
                 //string recv phase
                 while (true)
                 {
-                    if (socket.GetStream().DataAvailable)
+                    if (socket.Client.Poll(1000, SelectMode.SelectRead) && socket.Client.Available == 0)
+                    {
+                        Console.WriteLine(clientId + "'s Connection close");
+                        break;
+                    }
+                    else
                     {
                         byte[] recvMsgByte = new byte[BUFFERSIZE];
                         socket.GetStream().Read(recvMsgByte, 0, BUFFERSIZE);
@@ -133,17 +139,7 @@ namespace ChatClient
                             Console.WriteLine("ClientComm - read Error\n");
                             break;
                         }
-                    }
-                    else
-                    {
-                        if (socket.Available == 0)
-                        {
-                            Console.WriteLine(clientId + " is down");
-                            break;
-                        }
-                        //TODO!! DataAvailable을 사용해서 Client X버튼시 엔터는 막았으나
-                        //대신 커넥션이 끊어지지가 않음. 판단할 수 있는 방법을 찾아야함.
-                    }
+                    } 
                 }
             }
             catch (ArgumentNullException e)

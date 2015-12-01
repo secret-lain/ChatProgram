@@ -31,7 +31,7 @@ namespace ChatClient
         /// </summary>
         /// <returns>
         /// 1 = 정상
-        /// -1 = 예외에 의한 에러
+        /// -1 = 예외에 의한 에러 | Stream Read error
         /// -5 = 서버내 동일 닉네임이 존재함에 의한 에러
         /// </returns>
         private int ClientConnect()
@@ -40,6 +40,8 @@ namespace ChatClient
             if (clientSocket != null && clientSocket.Connected)
                 CloseSocket();
             clientSocket = new TcpClient();
+            clientSocket.ReceiveTimeout = 1000;
+            clientSocket.SendTimeout = 1000;
 
             try
             {
@@ -48,7 +50,10 @@ namespace ChatClient
 
                 byte[] nickNameCheck = new byte[1];
                 textWrite(clientNickname, serverSend: true);
-                clientStream.Read(nickNameCheck, 0, 1);
+
+                //Data가 읽을 수 있을 때까지 대기
+                while (!clientStream.DataAvailable) ;
+                    clientStream.Read(nickNameCheck, 0, 1);
 
                 //변환이 실패했거나, 성공했음에도 nickNameCheck 실패(동일한 닉네임이 존재)했을 경우
                 if(nickNameCheck[0] == 0){
@@ -65,14 +70,12 @@ namespace ChatClient
                 //Read에서 대기하다가 Server에서 Msg를 송신하면 이후코드실행
                 ServerMsgRecvThread = new Thread(new ThreadStart(() =>
                 {
-                    byte[] recvMsg = new byte[BUFFERSIZE];
+                    String recvMsg;
                     while (true)
                     {
-                            clientStream.Read(recvMsg, 0, recvMsg.Length);
-                            String parsedRecvMsg = new String(Encoding.UTF8.GetChars(recvMsg)).TrimEnd(new char[] { (char)0 });
-                            if (parsedRecvMsg != null)
-                                textWrite(parsedRecvMsg);
-                            recvMsg.Initialize();
+                        recvMsg = textRead();
+                        if (recvMsg != null)
+                            textWrite(recvMsg);
                     }
                 }));
                 ServerMsgRecvThread.Start();
@@ -106,6 +109,32 @@ namespace ChatClient
             }
         }
 
+        private String textRead()
+        {
+            byte[] recvMsg = new byte[BUFFERSIZE];
+
+            if (clientSocket == null || clientStream == null)
+                return null;
+            try
+            {
+                while (!clientStream.DataAvailable) ;
+                clientStream.Read(recvMsg, 0, recvMsg.Length);
+                return new String(Encoding.UTF8.GetChars(recvMsg)).TrimEnd(new char[] { (char)0 });
+            }
+            catch (IOException) {
+                MessageBox.Show("textRead Error");
+                CloseSocket();
+                toggleInitializingPage(true);
+                return null;
+            }
+            catch (ObjectDisposedException)
+            {
+                MessageBox.Show("textRead Error");
+                CloseSocket();
+                toggleInitializingPage(true);
+                return null;
+            }
+        }
 
         //ContentTextbox 에 입력텍스트를 출력하고 소켓을 통해 서버에 같은 메시지 전송
         private void textWrite(String text, Boolean printId = false, Boolean serverSend = false)
