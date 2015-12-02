@@ -18,7 +18,7 @@ namespace ChatClient
         private static IPAddress ip;
         private static int port;
         private static Queue<byte[]> clientSentMsgQueue = new Queue<byte[]>(5);
-        private static Hashtable clientPool = new Hashtable(10);
+        private static Dictionary<String,TcpClient> clientPool = new Dictionary<String,TcpClient>(10);
         private const int BUFFERSIZE = 512;
         //clientPool은 clientId 없이 모든 클라이언트에게 메세지 브로드캐스팅을 하기위함
         
@@ -39,6 +39,7 @@ namespace ChatClient
                 ip = IPAddress.Parse("127.0.0.1");
                 port = 25252;
                 Console.WriteLine("Argument check failed, server address is " + ip + ":" + port);
+                //Console.WriteLine("but your ip is" + Dns.GetHostEntry(Dns.GetHostName()).AddressList[0]);
             }
 
             serverSocket = new TcpListener(ip, port);
@@ -58,11 +59,15 @@ namespace ChatClient
                             if(dequeEchoString != "")
                             {
                                 Console.WriteLine(dequeEchoString);//Echo
-                                foreach (DictionaryEntry node in clientPool)
+
+                                foreach (TcpClient node in clientPool.Values.ToArray())
                                 {
-                                    if (((TcpClient)node.Value).Connected && dequeBytes != null)
+                                    NetworkStream ns = node.GetStream();
+                                    
+                                    if (ns == null || !ns.CanWrite) continue;
+                                    if (dequeEchoString != null)
                                     {
-                                        ((TcpClient)node.Value).GetStream().Write(dequeBytes, 0, BUFFERSIZE);
+                                       ns.Write(dequeBytes, 0, BUFFERSIZE);
                                     }
                                 }
                             }
@@ -73,6 +78,7 @@ namespace ChatClient
                 catch (InvalidOperationException) { }
                 catch (IOException) { }
                 //Exception의 경우 Node Pool에서 알아서 삭제되기 때문에 처리하지 않는다.
+                //물론 예외가 난 경우 Thread가 멈춰버리는 문제가 있음. 해결필요
             }));
             MsgQueueThread.Start();
 
