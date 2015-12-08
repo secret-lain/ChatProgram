@@ -9,9 +9,8 @@ using System.Net;
 using System.IO;
 using System.Threading;
 
-namespace ChatClient
+namespace ChatProgram
 {
-    //main Methods
     partial class ServerMain
     {
         private static TcpListener serverSocket;
@@ -19,6 +18,7 @@ namespace ChatClient
         private static int port;
         private static Queue<byte[]> clientSentMsgQueue = new Queue<byte[]>(5);
         private static Dictionary<String,TcpClient> clientPool = new Dictionary<String,TcpClient>(10);
+        private static LinkedList<ClientNode> clientPoolTest = new LinkedList<ClientNode>();//TODO ForTest
         private const int BUFFERSIZE = 512;
         //clientPool은 clientId 없이 모든 클라이언트에게 메세지 브로드캐스팅을 하기위함
         
@@ -48,8 +48,8 @@ namespace ChatClient
             //서버에 상주하며 메세지큐를 검사하고 메세지를 브로드캐스팅해주는 쓰레드. 람다로 구현.
             Thread MsgQueueThread = new Thread(new ThreadStart(()=>
             {
-                try
-                {
+                //try
+                //{
                     while (true)
                     {
                         if (clientSentMsgQueue.Count > 0)
@@ -74,9 +74,9 @@ namespace ChatClient
                             
                         }
                     }
-                }
-                catch (InvalidOperationException) { }
-                catch (IOException) { }
+                //}
+                //catch (InvalidOperationException) { }
+                //catch (IOException) { }
                 //Exception의 경우 Node Pool에서 알아서 삭제되기 때문에 처리하지 않는다.
                 //물론 예외가 난 경우 Thread가 멈춰버리는 문제가 있음. 해결필요
             }));

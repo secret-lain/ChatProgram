@@ -30,9 +30,9 @@ C:\Users\Administrator\Desktop\ChatProgram\WindowsFormsApplication2\obj\Debug\Wi
 C:\Users\Administrator\Desktop\ChatProgram\ChatClient\bin\Debug\WindowsFormsApplication2.exe.config
 C:\Users\Administrator\Desktop\ChatProgram\ChatClient\bin\Debug\WindowsFormsApplication2.exe
 C:\Users\Administrator\Desktop\ChatProgram\ChatClient\bin\Debug\WindowsFormsApplication2.pdb
-C:\Users\Administrator\Desktop\ChatProgram\ChatClient\obj\Debug\ChatClient.ClientForm.resources
-C:\Users\Administrator\Desktop\ChatProgram\ChatClient\obj\Debug\ChatClient.Properties.Resources.resources
+C:\Users\Administrator\Desktop\ChatProgram\ChatClient\obj\Debug\ChatClient.csprojResolveAssemblyReference.cache
+C:\Users\Administrator\Desktop\ChatProgram\ChatClient\obj\Debug\ChatProgram.ClientForm.resources
+C:\Users\Administrator\Desktop\ChatProgram\ChatClient\obj\Debug\ChatProgram.Properties.Resources.resources
 C:\Users\Administrator\Desktop\ChatProgram\ChatClient\obj\Debug\ChatClient.csproj.GenerateResource.Cache
 C:\Users\Administrator\Desktop\ChatProgram\ChatClient\obj\Debug\WindowsFormsApplication2.exe
 C:\Users\Administrator\Desktop\ChatProgram\ChatClient\obj\Debug\WindowsFormsApplication2.pdb
-C:\Users\Administrator\Desktop\ChatProgram\ChatClient\obj\Debug\ChatClient.csprojResolveAssemblyReference.cache

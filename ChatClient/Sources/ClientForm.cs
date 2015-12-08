@@ -12,7 +12,7 @@ using System.IO;
 using System.Threading;
 using System.Net;
 
-namespace ChatClient
+namespace ChatProgram
 {
     public partial class ClientForm : Form
     {

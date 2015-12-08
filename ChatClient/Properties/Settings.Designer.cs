@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace ChatClient.Properties {
+namespace ChatProgram.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
