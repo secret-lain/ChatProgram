@@ -1,3 +1,0 @@
-- textWrite Delegate add :: 타 스레드에서 폼 스레드의 내용을 변경하려고 하였기 때문에 안전한 접근을 위해 사용
-- Server Connected Nickname Repetition Check :: 최초 접속시 기존에 같은 닉네임이 존재하면 접근거부시킴. 아직 손님_rand(int32)를 만들지 못함
-- Enter 'Ding' sound Delete :: 메세지를 엔터를 쳐서 입력할때 나오던 Ding 소리를 삭제
